@@ -10,6 +10,19 @@ logging.basicConfig(level=logging.INFO)
 
 def evict(path: Path):
     LOGGER.info(f"Evicting {path}")
+    file_items: List[Path] = [path] if path.is_file() else list(path.rglob("**/*"))
+    total_items: n = len(file_items)
+
+    with Progress(*Progress.get_default_columns(), MofNCompleteColumn()) as prog:
+        task = prog.add_task(description="Evicting Data", total=total_items)
+        for file_item in file_items:
+            if file_item.is_file():
+                result = os.system(f"fileproviderctl evict \"{str(file_item)}\"")
+                if result != 0:
+                    return
+
+            prog.update(task, advance=1)
+            prog.refresh()
 
 
 def materialize(path: Path):
